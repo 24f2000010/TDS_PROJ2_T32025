@@ -10,3 +10,13 @@ def read_root():
     This is just to verify that the server is running.
     """
     return {"message": "Hello World. LLM Analysis Quiz agent is standing by."}
+
+@app.get("/health")
+def read_health():
+    """
+    A simple health check endpoint.
+    Uptime monitors will ping this.
+    It just needs to return a 200 OK.
+    """
+    # A simple, lightweight JSON response
+    return {"status": "ok"}
