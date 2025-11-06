@@ -1,4 +1,5 @@
 import os
+import json
 import asyncio
 from playwright.async_api import async_playwright
 from openai import AsyncOpenAI
@@ -13,21 +14,30 @@ llm_client = AsyncOpenAI(
 SYSTEM_PROMPT = """
 You are a highly intelligent data analysis agent.
 Your goal is to understand and solve a data quiz.
-You will be given the raw HTML of a quiz page.
-Analyze the HTML and, in plain English, state:
-1. What is the task or question?
-2. What are the steps to solve it?
-3. What is the final submission URL?
+You will be given TWO pieces of information:
+1.  A "Task Data" JSON object: This contains the URL to visit, but
+    also *CRITICAL METADATA*. It may include session IDs, task IDs,
+    or API keys that are *required* to solve the task.
+2.  The "Page HTML" from that URL.
+
+Analyze BOTH pieces of information and, in plain English, state:
+1.  What is the task or question?
+2.  Are there any hints (like API keys) in the "Task Data" JSON?
+3.  What are the steps to solve it?
+4.  What is the final submission URL?
 """
 
-async def solve_quiz_task(url: str, email: str, secret: str):
-    """
-    This worker now scrapes the page AND calls an LLM to understand it.
-    """
+async def solve_quiz_task(task_data: dict):
+    url = task_data.get("url")
     
     print("--------------------------------------------------")
     print(f"[WORKER] 🤖 Task accepted for URL: {url}")
+    print(f"[WORKER]  Full task data: {task_data}")
     
+    if not url:
+        print("[WORKER] ❌ FAILED: No 'url' field in task_data.")
+        return
+
     try:
         async with async_playwright() as p:
             print("[WORKER]  Launching browser...")
@@ -45,12 +55,20 @@ async def solve_quiz_task(url: str, email: str, secret: str):
             print(f"[WORKER] ✅ Successfully scraped page ({len(scraped_html)} bytes).")
 
         print("[WORKER] 🧠 Connecting to LLM to understand the task...")
+
+        user_content = f"""
+        --- Task Data (JSON) ---
+        {json.dumps(task_data, indent=2)}
+
+        --- Page HTML ---
+        {scraped_html}
+        """
         
         response = await llm_client.chat.completions.create(
-            model="gpt-4o", 
+            model="gpt-4o", # MODEL
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": scraped_html}
+                {"role": "user", "content": user_content}
             ]
         )
         

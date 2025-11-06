@@ -18,22 +18,12 @@ def read_health():
 async def handle_quiz_request(request: QuizRequest, background_tasks: BackgroundTasks):
     
     if not SECRET_KEY:
-        raise HTTPException(
-            status_code=500, 
-            detail="Server is not configured with a SECRET_KEY."
-        )
+        raise HTTPException(status_code=500, detail="Server not configured.")
 
     if request.secret != SECRET_KEY:
-        raise HTTPException(
-            status_code=403, 
-            detail="Invalid secret."
-        )
+        raise HTTPException(status_code=403, detail="Invalid secret.")
 
-    background_tasks.add_task(
-        solve_quiz_task, 
-        url=request.url, 
-        email=request.email, 
-        secret=request.secret
-    )
+    task_data = request.model_dump()
+    background_tasks.add_task(solve_quiz_task, task_data=task_data)
     
     return {"status": "Job accepted and processing in background."}
