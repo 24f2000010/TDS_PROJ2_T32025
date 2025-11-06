@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y \
     libnss3 \
     libnspr4 \
     libdbus-1-3 \
-    libatk-1.0-0 \
+    libatk1.0-0 \
     libatk-bridge2.0-0 \
     libcups2 \
     libdrm2 \
