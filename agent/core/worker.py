@@ -85,7 +85,7 @@ async def solve_quiz_task(task_data: dict):
             page = await browser.new_page(user_agent=USER_AGENT)
             
             print(f"[AGENT]  Navigating to {url}...")
-            await page.goto(url, wait_until="domcontentloaded", timeout=10000)
+            await page.goto(url, wait_until="domcontentloaded", timeout=30000)
             await asyncio.sleep(2) 
             
             html_content = await page.content()
