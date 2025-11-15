@@ -110,6 +110,7 @@ async def run_agent_loop(agent_name: str, model_name: str, system_prompt: str,
     
     for i in range(10):
         print(f"\n[{agent_name}] --- Loop {i+1} / 10 ---")
+        
         print(f"[{agent_name}]  🧠 Thinking (Calling {model_name})...")
         try:
             response = await llm_client.chat.completions.create(
@@ -124,6 +125,7 @@ async def run_agent_loop(agent_name: str, model_name: str, system_prompt: str,
             print(f"[{agent_name}] ❌ LLM call failed: {e}")
             message_history.append({"role": "user", "content": f"LLM Error: {e}. Please try again."})
             continue
+
         try:
             try:
                 action_json = json.loads(llm_response_text)
@@ -151,6 +153,7 @@ async def run_agent_loop(agent_name: str, model_name: str, system_prompt: str,
                 return result
             else:
                 result = f"Error: LLM returned an unknown tool: '{tool}'."
+
             print(f"[{agent_name}]  Tool output: {result[:500]}...")
             await page.wait_for_load_state("networkidle", timeout=3000)
             new_html = await page.content()
@@ -212,7 +215,7 @@ async def solve_quiz_task(task_data: dict):
             
             if specialist == "CODE":
                 result = await run_agent_loop(
-                    "CODE_AGENT", "openai/gpt-5-pro", 
+                    "CODE_AGENT", "openai/gpt-5-pro",
                     CODE_AGENT_PROMPT, page, task_data, html_content
                 )
             elif specialist == "PRO":
