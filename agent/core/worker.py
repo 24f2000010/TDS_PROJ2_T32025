@@ -25,27 +25,27 @@ You MUST operate in a step-by-step "See-Think-Act" loop.
 You MUST respond with a single valid JSON object describing the *one* tool you want to use next.
 
 1.  **Web Navigation:**
-    {"tool": "click", "selector": "<css_selector>"}
-    {"tool": "fill_text", "selector": "<css_selector>", "text": "<text_to_fill>"}
+    {{"tool": "click", "selector": "<css_selector>"}}
+    {{"tool": "fill_text", "selector": "<css_selector>", "text": "<text_to_fill>"}}
 
 2.  **Data Sourcing:**
-    {"tool": "call_api", "url": "<api_url>", "headers": {}}
-    {"tool": "read_file", "url": "<file_url>"}
+    {{"tool": "call_api", "url": "<api_url>", "headers": {{}} }}
+    {{"tool": "read_file", "url": "<file_url>"}}
        (Use this for PDFs, CSVs, or text files found on the page)
 
 3.  **Data Analysis (Code):**
-    {"tool": "run_python_code", "code": "<python_code_snippet>"}
+    {{"tool": "run_python_code", "code": "<python_code_snippet>"}}
        (CRITICAL: Use this for ALL math, parsing, filtering, or analysis.
        You have `pandas as pd`, `numpy as np`, and `io` available.
        Data from other tools is a string. Use `pd.read_csv(io.StringIO(data_string))`.
        You MUST `print()` your final answer to get the output.)
 
 4.  **Vision Analysis:**
-    {"tool": "take_screenshot_and_analyze", "analysis_prompt": "<what_to_look_for>"}
+    {{"tool": "take_screenshot_and_analyze", "analysis_prompt": "<what_to_look_for>"}}
        (Use this if the HTML is confusing or the task is visual, like a chart or image.)
 
 5.  **Final Submission:**
-    {"tool": "submit_answer", "submission_url": "<url>", "answer_json": {"answer": <value>}}
+    {{"tool": "submit_answer", "submission_url": "<url>", "answer_json": {{"answer": <value>}} }}
        (Use this *only* when you have the final answer and are ready to end the task.)
 
 **CURRENT PAGE HTML:**
