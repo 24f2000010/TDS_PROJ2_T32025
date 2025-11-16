@@ -73,15 +73,10 @@ async def tool_read_file(url: str):
 async def tool_run_python_code(code: str):
     """
     Executes a snippet of Python code for data analysis.
-    Only `pandas`, `numpy`, and `io` are available.
+    The code can import any library installed in the environment.
     """
     print(f"[TOOL] 🐍 RUN PYTHON: \n{code}")
-    
-    safe_globals = {
-        'pd': pd,
-        'np': np,
-        'io': io
-    }
+    isolated_globals = {"__builtins__": __builtins__}
     
     code_out = io.StringIO()
     
@@ -90,7 +85,8 @@ async def tool_run_python_code(code: str):
         original_stdout = sys.stdout
         sys.stdout = code_out
         
-        exec(code, {'__builtins__': {}}, safe_globals)
+        exec(code, isolated_globals)
+        
         sys.stdout = original_stdout
         
         output = code_out.getvalue()
