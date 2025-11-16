@@ -78,7 +78,7 @@ async def solve_quiz_task(task_data: dict):
             
             message_history = []
 
-            for i in range(15):
+            for i in range(3):
                 print(f"\n[AGENT] --- Loop {i+1} / 15 ---")
                 
                 print("[AGENT]  👀 Seeing (Scraping page)...")
