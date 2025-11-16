@@ -1,4 +1,3 @@
-import os
 import asyncio
 import httpx
 import pdfplumber
@@ -7,6 +6,7 @@ import pandas as pd
 import numpy as np
 import traceback
 import base64
+import os
 from playwright.async_api import Page
 from openai import AsyncOpenAI
 
@@ -16,7 +16,7 @@ llm_client = AsyncOpenAI(
 )
 
 async def tool_click(page: Page, selector: str):
-    """Uses Playwright to click an element."""
+    """Uses Playwright to click an element based on its CSS selector."""
     print(f"[TOOL] 🦾 CLICK: {selector}")
     if not selector:
         raise ValueError("No selector provided for click tool")
@@ -71,18 +71,26 @@ async def tool_read_file(url: str):
         return f"Error reading file: {str(e)}"
 
 async def tool_run_python_code(code: str):
-    """Executes a snippet of Python code for data analysis."""
+    """
+    Executes a snippet of Python code for data analysis.
+    Only `pandas`, `numpy`, and `io` are available.
+    """
     print(f"[TOOL] 🐍 RUN PYTHON: \n{code}")
     
-    safe_globals = {'pd': pd, 'np': np, 'io': io}
+    safe_globals = {
+        'pd': pd,
+        'np': np,
+        'io': io
+    }
+    
     code_out = io.StringIO()
     
     try:
         import sys
         original_stdout = sys.stdout
         sys.stdout = code_out
-        exec(code, {'__builtins__': {}}, safe_globals)
         
+        exec(code, {'__builtins__': {}}, safe_globals)
         sys.stdout = original_stdout
         
         output = code_out.getvalue()
@@ -96,17 +104,17 @@ async def tool_run_python_code(code: str):
         return f"Error executing Python code: {e}\n{tb}"
 
 async def tool_take_screenshot_and_analyze(page: Page, analysis_prompt: str):
-    """Takes a screenshot, sends it to a vision model, and returns a text analysis."""
+    """Takes a screenshot, sends it to Gemini 2.5 Pro for analysis."""
     print(f"[TOOL] 📸 Taking screenshot for analysis...")
     
     screenshot_bytes = await page.screenshot()
     screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
     
-    print(f"[TOOL]  Screenshot captured. Sending to GPT-5-Pro for analysis...")
+    print(f"[TOOL]  Screenshot captured. Sending to Gemini for analysis...")
     
     try:
         response = await llm_client.chat.completions.create(
-            model="openai/gpt-5-pro",
+            model="google/gemini-2.5-pro",
             messages=[
                 {
                     "role": "user",
@@ -131,6 +139,6 @@ async def tool_take_screenshot_and_analyze(page: Page, analysis_prompt: str):
         return f"Error during vision analysis: {str(e)}"
 
 async def tool_submit_answer(submission_url: str, answer_json: dict):
-    """The FINAL tool. Submits the answer to the evaluator."""
+    """The FINAL tool. Logs the answer and submission URL."""
     print(f"[TOOL] 📤 SUBMIT: {answer_json} to {submission_url}")
     return f"Task completed. Final answer logged: {answer_json}"
