@@ -8,3 +8,5 @@ pdfplumber
 pandas
 numpy
 matplotlib
+python-dotenv
+reportlab

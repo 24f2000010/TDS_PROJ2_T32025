@@ -12,10 +12,31 @@ from typing import Any, Tuple
 from playwright.async_api import Page
 from openai import AsyncOpenAI
 
-llm_client = AsyncOpenAI(
-    api_key=os.environ.get("AIPIPE_API_KEY"),
-    base_url=os.environ.get("AIPIPE_BASE_URL"),
-)
+# Lazy initialization to avoid errors during import when API key is not set
+_llm_client = None
+
+def get_llm_client():
+    """Get or create the LLM client instance"""
+    global _llm_client
+    if _llm_client is None:
+        api_key = os.environ.get("AIPIPE_API_KEY")
+        base_url = os.environ.get("AIPIPE_BASE_URL")
+        if api_key:
+            _llm_client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        else:
+            # Return a mock client for testing when API key is not set
+            # This allows tests to run without API credentials
+            class MockCompletions:
+                async def create(self, *args, **kwargs):
+                    raise RuntimeError("AIPIPE_API_KEY not set")
+            class MockChat:
+                def __init__(self):
+                    self.completions = MockCompletions()
+            class MockClient:
+                def __init__(self):
+                    self.chat = MockChat()
+            _llm_client = MockClient()
+    return _llm_client
 
 async def tool_click(page: Page, selector: str):
     """Uses Playwright to click an element based on its CSS selector."""
@@ -111,6 +132,7 @@ async def tool_take_screenshot_and_analyze(page: Page, analysis_prompt: str):
     print(f"[TOOL]  Screenshot captured. Sending to Gemini for analysis...")
     
     try:
+        llm_client = get_llm_client()
         response = await llm_client.chat.completions.create(
             model="google/gemini-2.5-pro",
             messages=[
