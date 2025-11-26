@@ -3,6 +3,7 @@ import json
 import asyncio
 import re
 import traceback
+from urllib.parse import urljoin
 from playwright.async_api import async_playwright, Page
 from openai import AsyncOpenAI
 from agent.core.tools import *
@@ -72,6 +73,25 @@ You MUST respond with a single valid JSON object describing the *one* tool you w
 **CURRENT PAGE HTML:**
 {html_content}
 """
+
+
+def _resolve_url(base_url: str, target_url: str) -> str:
+    """
+    Resolve relative URLs against the current page URL.
+    - If target_url is absolute (http/https), returns as-is.
+    - If target_url is relative, joins it with base_url.
+    """
+    if not target_url:
+        return target_url
+    if target_url.startswith(("http://", "https://")):
+        return target_url
+    try:
+        resolved = urljoin(base_url, target_url)
+        print(f"[NAV] Resolved URL '{target_url}' against '{base_url}' -> '{resolved}'")
+        return resolved
+    except Exception as e:
+        print(f"[NAV] Failed to resolve URL '{target_url}' against '{base_url}': {e}")
+        return target_url
 
 def extract_submission_url(text: str) -> str:
     """
@@ -212,9 +232,13 @@ async def run_single_task_loop(page: Page, task_hint: str):
             elif tool == "fill_text":
                 result = await tool_fill_text(page, action_json.get("selector"), action_json.get("text"))
             elif tool == "call_api":
-                result = await tool_call_api(action_json.get("url"), action_json.get("headers"))
+                raw_url = action_json.get("url")
+                resolved_url = _resolve_url(page.url, raw_url)
+                result = await tool_call_api(resolved_url, action_json.get("headers"))
             elif tool == "read_file":
-                result = await tool_read_file(action_json.get("url"))
+                raw_url = action_json.get("url")
+                resolved_url = _resolve_url(page.url, raw_url)
+                result = await tool_read_file(resolved_url)
             elif tool == "run_python_code":
                 result = await tool_run_python_code(action_json.get("code"))
             elif tool == "take_screenshot_and_analyze":
@@ -227,8 +251,10 @@ async def run_single_task_loop(page: Page, task_hint: str):
                     "url": page.url,
                     "answer": action_json.get("answer_json", {}).get("answer")
                 }
+                raw_submission_url = action_json.get("submission_url")
+                submission_url = _resolve_url(page.url, raw_submission_url)
                 result = await tool_submit_answer(
-                    action_json.get("submission_url"), 
+                    submission_url,
                     submission_payload
                 )
                 print(f"[SOLVER] ✅ Task submission complete.")
