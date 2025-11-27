@@ -134,7 +134,7 @@ async def tool_take_screenshot_and_analyze(page: Page, analysis_prompt: str):
     try:
         llm_client = get_llm_client()
         response = await llm_client.chat.completions.create(
-            model="google/gemini-2.5-pro",
+            model=os.environ.get("LLM_MODEL", "google/gemini-2.5-pro"),
             messages=[
                 {
                     "role": "user",
